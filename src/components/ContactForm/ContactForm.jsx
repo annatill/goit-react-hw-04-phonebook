@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useRef } from 'react';
 import propTypes from 'prop-types';
 import { nanoid } from 'nanoid';
 import {
@@ -14,112 +14,114 @@ const FormError = ({ message }) => {
   return <Message>{message}</Message>;
 };
 
-export class ContactForm extends Component {
-  constructor(props) {
-    super(props);
-    this.submitButton = React.createRef();
-  }
+export const ContactForm = ({ isContactExist, onSubmit }) => {
+  const [name, setName] = useState('');
+  const [number, setNumber] = useState('');
+  const [nameError, setNameError] = useState(null);
+  const [numberError, setNumberError] = useState(null);
 
-  state = {
-    name: '',
-    number: '',
-    nameError: null,
-    numberError: null,
-  };
+  const nameInputId = nanoid();
+  const telInputId = nanoid();
+  const submitButton = useRef();
 
-  nameInputId = nanoid();
-  telInputId = nanoid();
-
-  handleChange = event => {
+  const handleChange = event => {
     const { name, value } = event.currentTarget;
-    this.setState({ [name]: value, [`${name}Error`]: null });
+    switch (name) {
+      case 'name':
+        setName(value);
+        break;
+
+      case 'number':
+        setNumber(value);
+        break;
+
+      case 'nameError':
+        setNameError(null);
+        break;
+
+      case 'numberError':
+        setNumberError(null);
+        break;
+
+      default:
+        break;
+    }
   };
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
-    const { name, number } = this.state;
 
     if (!name || !number) {
-      this.setState({
-        nameError: 'Please fill in all fields',
-      });
+      setNameError('Please fill in all fields');
       return;
     }
 
     const isValidName = /^[\p{L}\s]+$/u;
     if (!isValidName.test(name)) {
-      this.setState({ nameError: 'Please enter a valid name' });
+      setNameError('Please enter a valid name');
       return;
     }
 
     const isValidNumber = /^[0-9\s-]+$/;
     if (!isValidNumber.test(number)) {
-      this.setState({ numberError: 'Please enter a valid number' });
+      setNumberError('Please enter a valid number');
       return;
     }
 
-    const isContactExist = this.props.isContactExist(name);
-    if (isContactExist) {
-      this.setState({ nameError: 'Already exists!' });
+    const isContactExistName = isContactExist(name);
+    if (isContactExistName) {
+      setNameError('Already exists!');
       return;
     }
-    this.props.onSubmit(name, number);
-    this.reset();
-    this.submitButton.current.focus();
+
+    onSubmit(name, number);
+    reset();
+    submitButton.current.focus();
   };
 
-  reset = () => {
-    this.setState({ name: '', number: '' });
+  const reset = () => {
+    setName('');
+    setNumber('');
   };
 
-  render() {
-    return (
-      <Form onSubmit={this.handleSubmit}>
-        <ContainerInput>
-          <Label htmlFor={this.nameInputId}>
-            Name
-            <Input
-              className="input"
-              type="text"
-              name="name"
-              placeholder="Enter name"
-              id={this.nameInputId}
-              value={this.state.name}
-              onChange={this.handleChange}
-            />
-          </Label>
-          <>
-            {this.state.nameError && (
-              <FormError name="name" message={this.state.nameError} />
-            )}
-          </>
-        </ContainerInput>
-        <ContainerInput>
-          <Label htmlFor={this.telInputId}>
-            Phone
-            <Input
-              className="input"
-              type="tel"
-              name="number"
-              placeholder="Enter phone number"
-              id={this.telInputId}
-              value={this.state.number}
-              onChange={this.handleChange}
-            />
-          </Label>
-          <>
-            {this.state.numberError && (
-              <FormError name="number" message={this.state.numberError} />
-            )}
-          </>
-        </ContainerInput>
-        <Button type="submit" ref={this.submitButton}>
-          Add contact
-        </Button>
-      </Form>
-    );
-  }
-}
+  return (
+    <Form onSubmit={handleSubmit}>
+      <ContainerInput>
+        <Label htmlFor={nameInputId}>
+          Name
+          <Input
+            className="input"
+            type="text"
+            name="name"
+            placeholder="Enter name"
+            id={nameInputId}
+            value={name}
+            onChange={handleChange}
+          />
+        </Label>
+        <>{nameError && <FormError name="name" message={nameError} />}</>
+      </ContainerInput>
+      <ContainerInput>
+        <Label htmlFor={telInputId}>
+          Phone
+          <Input
+            className="input"
+            type="tel"
+            name="number"
+            placeholder="Enter phone number"
+            id={telInputId}
+            value={number}
+            onChange={handleChange}
+          />
+        </Label>
+        <>{numberError && <FormError name="number" message={numberError} />}</>
+      </ContainerInput>
+      <Button type="submit" ref={submitButton}>
+        Add contact
+      </Button>
+    </Form>
+  );
+};
 
 ContactForm.propTypes = {
   onSubmit: propTypes.func.isRequired,
